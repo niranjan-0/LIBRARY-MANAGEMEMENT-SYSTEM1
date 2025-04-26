@@ -1,160 +1,179 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize dashboard with stats and charts
+    // Load dashboard data
     loadDashboardData();
-});
-
-/**
- * Load all dashboard data
- */
-async function loadDashboardData() {
-    try {
-        const stats = await fetchData('/api/dashboard/stats');
-        
-        // Update stat cards
-        updateStatsCards(stats);
-        
-        // Create charts
-        createGenreChart(stats.books_by_genre);
-        
-        // Update tables
-        updateRecentBorrowingsTable(stats.recent_borrowings);
-        updateTopBooksTable(stats.top_books);
-    } catch (error) {
-        console.error('Error loading dashboard data:', error);
-        showToast('Failed to load dashboard data', 'error');
-    }
-}
-
-/**
- * Update the statistics cards
- * @param {Object} stats - The dashboard statistics
- */
-function updateStatsCards(stats) {
-    document.getElementById('total-books').textContent = stats.total_books;
-    document.getElementById('total-members').textContent = stats.total_members;
-    document.getElementById('total-borrowings').textContent = stats.total_borrowings;
-    document.getElementById('overdue-borrowings').textContent = stats.overdue_borrowings;
-}
-
-/**
- * Create chart showing books by genre
- * @param {Array} genreData - The genre data
- */
-function createGenreChart(genreData) {
-    const ctx = document.getElementById('genreChart').getContext('2d');
     
-    // Extract labels and data
-    const labels = genreData.map(item => item.Genre || 'Unspecified');
-    const data = genreData.map(item => item.count);
-    
-    // Create a color array
-    const colors = [
-        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
-        '#6f42c1', '#5a5c69', '#858796', '#d1d3e2', '#f8f9fc'
-    ];
-    
-    // Create chart
-    new Chart(ctx, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors.slice(0, data.length),
-                hoverBackgroundColor: colors.slice(0, data.length),
-                hoverBorderColor: 'rgba(234, 236, 244, 1)',
-            }],
-        },
-        options: {
-            maintainAspectRatio: false,
-            responsive: true,
-            legend: {
-                position: 'right',
-            },
-            tooltips: {
-                backgroundColor: 'rgb(255,255,255)',
-                bodyFontColor: '#858796',
-                borderColor: '#dddfeb',
-                borderWidth: 1,
-                xPadding: 15,
-                yPadding: 15,
-                displayColors: false,
-                caretPadding: 10,
-            },
-        },
-    });
-}
-
-/**
- * Update the recent borrowings table
- * @param {Array} borrowings - Recent borrowings data
- */
-function updateRecentBorrowingsTable(borrowings) {
-    const tableBody = document.getElementById('recent-borrowings-table').querySelector('tbody');
-    tableBody.innerHTML = '';
-    
-    if (borrowings.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="5" class="text-center">No recent borrowings found</td>';
-        tableBody.appendChild(row);
-        return;
+    /**
+     * Load all dashboard data
+     */
+    async function loadDashboardData() {
+        showLoader();
+        try {
+            const response = await fetchData('/api/dashboard/stats');
+            
+            // Update statistics cards
+            updateStatsCards(response);
+            
+            // Create genre chart
+            if (response.books_by_genre && response.books_by_genre.length > 0) {
+                createGenreChart(response.books_by_genre);
+            }
+            
+            // Update recent borrowings table
+            if (response.recent_borrowings && response.recent_borrowings.length > 0) {
+                updateRecentBorrowingsTable(response.recent_borrowings);
+            }
+            
+            // Update top books table
+            if (response.top_books && response.top_books.length > 0) {
+                updateTopBooksTable(response.top_books);
+            }
+            
+            hideLoader();
+        } catch (error) {
+            showToast('Error loading dashboard data: ' + error.message, 'error');
+            hideLoader();
+        }
     }
     
-    borrowings.forEach(borrowing => {
-        const row = document.createElement('tr');
+    /**
+     * Update the statistics cards
+     * @param {Object} stats - The dashboard statistics
+     */
+    function updateStatsCards(stats) {
+        document.getElementById('total-books').textContent = stats.total_books || 0;
+        document.getElementById('total-members').textContent = stats.total_members || 0;
+        document.getElementById('total-borrowings').textContent = stats.total_borrowings || 0;
+        document.getElementById('overdue-borrowings').textContent = stats.overdue_borrowings || 0;
+    }
+    
+    /**
+     * Create chart showing books by genre
+     * @param {Array} genreData - The genre data
+     */
+    function createGenreChart(genreData) {
+        const ctx = document.getElementById('genreChart').getContext('2d');
         
-        // Create status badge
-        let statusBadge = '';
-        if (!borrowing.ReturnDate && new Date(borrowing.DueDate) < new Date()) {
-            statusBadge = '<span class="badge bg-danger">Overdue</span>';
-        } else if (!borrowing.ReturnDate) {
-            statusBadge = '<span class="badge bg-warning">Borrowed</span>';
-        } else {
-            statusBadge = '<span class="badge bg-success">Returned</span>';
+        // Extract labels and data
+        const labels = genreData.map(item => item.genre);
+        const data = genreData.map(item => item.count);
+        
+        // Generate background colors
+        const backgroundColors = generateColors(genreData.length);
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: 'white'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((acc, curr) => acc + curr, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    /**
+     * Update the recent borrowings table
+     * @param {Array} borrowings - Recent borrowings data
+     */
+    function updateRecentBorrowingsTable(borrowings) {
+        const tbody = document.getElementById('recent-borrowings-table');
+        tbody.innerHTML = '';
+        
+        borrowings.forEach(borrowing => {
+            const row = document.createElement('tr');
+            
+            // Determine status
+            let status = 'Active';
+            let statusClass = 'bg-primary';
+            
+            if (borrowing.ReturnDate) {
+                status = 'Returned';
+                statusClass = 'bg-success';
+            } else if (new Date(borrowing.DueDate) < new Date()) {
+                status = 'Overdue';
+                statusClass = 'bg-danger';
+            }
+            
+            row.innerHTML = `
+                <td>${borrowing.MemberName || 'Unknown'}</td>
+                <td>${borrowing.BookTitle || 'Unknown'}</td>
+                <td>${formatDateForDisplay(borrowing.BorrowDate)}</td>
+                <td>${formatDateForDisplay(borrowing.DueDate)}</td>
+                <td><span class="badge ${statusClass}">${status}</span></td>
+            `;
+            
+            tbody.appendChild(row);
+        });
+    }
+    
+    /**
+     * Update the top books table
+     * @param {Array} books - Top books data
+     */
+    function updateTopBooksTable(books) {
+        const tbody = document.getElementById('top-books-table');
+        tbody.innerHTML = '';
+        
+        books.forEach(book => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${book.title}</td>
+                <td>${book.count}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    /**
+     * Generate an array of colors for chart
+     * @param {number} count - Number of colors to generate
+     * @returns {Array} Array of colors
+     */
+    function generateColors(count) {
+        const baseColors = [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 206, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)',
+            'rgba(199, 199, 199, 0.8)',
+            'rgba(83, 102, 255, 0.8)',
+            'rgba(40, 159, 64, 0.8)',
+            'rgba(210, 199, 199, 0.8)'
+        ];
+        
+        const colors = [];
+        for (let i = 0; i < count; i++) {
+            const colorIndex = i % baseColors.length;
+            colors.push(baseColors[colorIndex]);
         }
         
-        row.innerHTML = `
-            <td>${borrowing.MemberName}</td>
-            <td>${borrowing.BookTitle}</td>
-            <td>${formatDateForDisplay(borrowing.BorrowDate)}</td>
-            <td>${formatDateForDisplay(borrowing.DueDate)}</td>
-            <td>${statusBadge}</td>
-        `;
-        
-        tableBody.appendChild(row);
-    });
-}
-
-/**
- * Update the top books table
- * @param {Array} books - Top books data
- */
-function updateTopBooksTable(books) {
-    const tableBody = document.getElementById('top-books-table').querySelector('tbody');
-    tableBody.innerHTML = '';
-    
-    if (books.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = '<td colspan="3" class="text-center">No book data available</td>';
-        tableBody.appendChild(row);
-        return;
+        return colors;
     }
-    
-    books.forEach((book, index) => {
-        const row = document.createElement('tr');
-        
-        // Create rank badge
-        let rankBadge = `<span class="badge rounded-pill bg-secondary">${index + 1}</span>`;
-        if (index === 0) rankBadge = '<span class="badge rounded-pill bg-warning">1</span>';
-        if (index === 1) rankBadge = '<span class="badge rounded-pill bg-secondary">2</span>';
-        if (index === 2) rankBadge = '<span class="badge rounded-pill bg-danger">3</span>';
-        
-        row.innerHTML = `
-            <td>${rankBadge}</td>
-            <td>${book.Title}</td>
-            <td>${book.BorrowCount}</td>
-        `;
-        
-        tableBody.appendChild(row);
-    });
-}
+});

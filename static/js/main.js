@@ -1,28 +1,15 @@
-// Global DOM elements
-const loaderElement = document.createElement('div');
-loaderElement.classList.add('loader-overlay');
-loaderElement.innerHTML = '<div class="loader"></div>';
-
-// Toast container
-const toastContainer = document.createElement('div');
-toastContainer.classList.add('toast-container');
-document.body.appendChild(toastContainer);
-
-// Utility functions
 /**
- * Shows a loader overlay while operations are in progress
+ * Shows the loader overlay
  */
 function showLoader() {
-    document.body.appendChild(loaderElement);
+    document.getElementById('loader-overlay').style.display = 'flex';
 }
 
 /**
  * Hides the loader overlay
  */
 function hideLoader() {
-    if (document.body.contains(loaderElement)) {
-        document.body.removeChild(loaderElement);
-    }
+    document.getElementById('loader-overlay').style.display = 'none';
 }
 
 /**
@@ -31,40 +18,25 @@ function hideLoader() {
  * @param {string} type - The type of message (success, error, warning)
  */
 function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.classList.add('toast', 'show');
-    toast.setAttribute('role', 'alert');
-    toast.setAttribute('aria-live', 'assertive');
-    toast.setAttribute('aria-atomic', 'true');
-
-    // Set background color based on type
-    let bgColor = 'bg-success';
-    if (type === 'error') bgColor = 'bg-danger';
-    if (type === 'warning') bgColor = 'bg-warning';
-    if (type === 'info') bgColor = 'bg-info';
-
-    toast.innerHTML = `
-        <div class="toast-header ${bgColor} text-white">
-            <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body">
-            ${message}
-        </div>
-    `;
-
-    toastContainer.appendChild(toast);
-
-    // Remove toast after 5 seconds
-    setTimeout(() => {
-        toast.remove();
-    }, 5000);
-
-    // Make close button work
-    const closeButton = toast.querySelector('.btn-close');
-    closeButton.addEventListener('click', () => {
-        toast.remove();
-    });
+    const toast = document.getElementById('toast');
+    const toastBody = toast.querySelector('.toast-body');
+    
+    // Set message
+    toastBody.textContent = message;
+    
+    // Set style based on type
+    toast.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'text-white');
+    if (type === 'success') {
+        toast.classList.add('bg-success', 'text-white');
+    } else if (type === 'error') {
+        toast.classList.add('bg-danger', 'text-white');
+    } else if (type === 'warning') {
+        toast.classList.add('bg-warning', 'text-white');
+    }
+    
+    // Show toast
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
 }
 
 /**
@@ -75,10 +47,7 @@ function showToast(message, type = 'success') {
 function formatDate(dateString) {
     if (!dateString) return '';
     const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return date.toISOString().split('T')[0];
 }
 
 /**
@@ -87,13 +56,9 @@ function formatDate(dateString) {
  * @returns {string} The formatted date string
  */
 function formatDateForDisplay(dateString) {
-    if (!dateString) return '-';
+    if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric'
-    });
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 /**
@@ -104,44 +69,15 @@ function formatDateForDisplay(dateString) {
 function validateForm(form) {
     let isValid = true;
     
-    // Reset previous validations
-    form.querySelectorAll('.is-invalid').forEach(el => {
-        el.classList.remove('is-invalid');
-    });
-    
-    // Check all required fields
-    form.querySelectorAll('[required]').forEach(field => {
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
-            const feedbackElement = field.nextElementSibling;
-            if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
-                feedbackElement.textContent = 'This field is required.';
-            }
+    Array.from(form.elements).forEach(element => {
+        if (element.hasAttribute('required') && !element.value.trim()) {
             isValid = false;
-        }
-    });
-    
-    // Check email fields
-    form.querySelectorAll('input[type="email"]').forEach(field => {
-        if (field.value.trim() && !validateEmail(field.value)) {
-            field.classList.add('is-invalid');
-            const feedbackElement = field.nextElementSibling;
-            if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
-                feedbackElement.textContent = 'Please enter a valid email address.';
-            }
+            element.classList.add('is-invalid');
+        } else if (element.type === 'email' && element.value.trim() && !validateEmail(element.value)) {
             isValid = false;
-        }
-    });
-    
-    // Check number fields
-    form.querySelectorAll('input[type="number"]').forEach(field => {
-        if (field.value.trim() && (isNaN(field.value) || parseFloat(field.value) < 0)) {
-            field.classList.add('is-invalid');
-            const feedbackElement = field.nextElementSibling;
-            if (feedbackElement && feedbackElement.classList.contains('invalid-feedback')) {
-                feedbackElement.textContent = 'Please enter a valid positive number.';
-            }
-            isValid = false;
+            element.classList.add('is-invalid');
+        } else {
+            element.classList.remove('is-invalid');
         }
     });
     
@@ -154,8 +90,8 @@ function validateForm(form) {
  * @returns {boolean} Whether the email is valid
  */
 function validateEmail(email) {
-    const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
 }
 
 /**
@@ -167,83 +103,81 @@ function validateEmail(email) {
  * @param {function} onChange - The function to call when the page changes
  */
 function createPagination(container, totalItems, itemsPerPage, currentPage, onChange) {
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    
-    // Clear existing pagination
     container.innerHTML = '';
     
-    // If no pages, return
-    if (totalPages <= 1) return;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
     
-    const pagination = document.createElement('ul');
-    pagination.classList.add('pagination', 'justify-content-center');
+    if (totalPages <= 1) {
+        return;
+    }
     
     // Previous button
-    const prevLi = document.createElement('li');
-    prevLi.classList.add('page-item');
-    if (currentPage === 1) prevLi.classList.add('disabled');
+    const prevItem = document.createElement('li');
+    prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
     
     const prevLink = document.createElement('a');
-    prevLink.classList.add('page-link');
-    prevLink.setAttribute('href', '#');
+    prevLink.className = 'page-link';
+    prevLink.href = '#';
     prevLink.setAttribute('aria-label', 'Previous');
     prevLink.innerHTML = '<span aria-hidden="true">&laquo;</span>';
     
-    prevLi.appendChild(prevLink);
-    pagination.appendChild(prevLi);
-    
-    prevLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (currentPage > 1) {
-            onChange(currentPage - 1);
-        }
-    });
-    
-    // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, startPage + 4);
-    
-    for (let i = startPage; i <= endPage; i++) {
-        const pageLi = document.createElement('li');
-        pageLi.classList.add('page-item');
-        if (i === currentPage) pageLi.classList.add('active');
-        
-        const pageLink = document.createElement('a');
-        pageLink.classList.add('page-link');
-        pageLink.setAttribute('href', '#');
-        pageLink.textContent = i;
-        
-        pageLi.appendChild(pageLink);
-        pagination.appendChild(pageLi);
-        
-        pageLink.addEventListener('click', (e) => {
+    if (currentPage > 1) {
+        prevLink.addEventListener('click', (e) => {
             e.preventDefault();
-            onChange(i);
+            onChange(currentPage - 1);
         });
     }
     
+    prevItem.appendChild(prevLink);
+    container.appendChild(prevItem);
+    
+    // Page numbers
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(startPage + 4, totalPages);
+    
+    if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const pageItem = document.createElement('li');
+        pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        
+        const pageLink = document.createElement('a');
+        pageLink.className = 'page-link';
+        pageLink.href = '#';
+        pageLink.textContent = i;
+        
+        if (i !== currentPage) {
+            pageLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                onChange(i);
+            });
+        }
+        
+        pageItem.appendChild(pageLink);
+        container.appendChild(pageItem);
+    }
+    
     // Next button
-    const nextLi = document.createElement('li');
-    nextLi.classList.add('page-item');
-    if (currentPage === totalPages) nextLi.classList.add('disabled');
+    const nextItem = document.createElement('li');
+    nextItem.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
     
     const nextLink = document.createElement('a');
-    nextLink.classList.add('page-link');
-    nextLink.setAttribute('href', '#');
+    nextLink.className = 'page-link';
+    nextLink.href = '#';
     nextLink.setAttribute('aria-label', 'Next');
     nextLink.innerHTML = '<span aria-hidden="true">&raquo;</span>';
     
-    nextLi.appendChild(nextLink);
-    pagination.appendChild(nextLi);
-    
-    nextLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (currentPage < totalPages) {
+    if (currentPage < totalPages) {
+        nextLink.addEventListener('click', (e) => {
+            e.preventDefault();
             onChange(currentPage + 1);
-        }
-    });
+        });
+    }
     
-    container.appendChild(pagination);
+    nextItem.appendChild(nextLink);
+    container.appendChild(nextItem);
 }
 
 /**
@@ -253,21 +187,17 @@ function createPagination(container, totalItems, itemsPerPage, currentPage, onCh
  */
 async function fetchData(url) {
     try {
-        showLoader();
         const response = await fetch(url);
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'An error occurred');
+            const error = await response.json();
+            throw new Error(error.error || 'API request failed');
         }
         
         return await response.json();
     } catch (error) {
-        showToast(error.message, 'error');
         console.error('Error fetching data:', error);
         throw error;
-    } finally {
-        hideLoader();
     }
 }
 
@@ -280,8 +210,6 @@ async function fetchData(url) {
  */
 async function sendRequest(url, method, data = null) {
     try {
-        showLoader();
-        
         const options = {
             method: method,
             headers: {
@@ -289,145 +217,43 @@ async function sendRequest(url, method, data = null) {
             }
         };
         
-        if (data && method !== 'DELETE') {
+        if (data && (method === 'POST' || method === 'PUT')) {
             options.body = JSON.stringify(data);
         }
         
         const response = await fetch(url, options);
         
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'An error occurred');
+            const error = await response.json();
+            throw new Error(error.error || 'API request failed');
         }
         
         return await response.json();
     } catch (error) {
-        showToast(error.message, 'error');
-        console.error('Error sending request:', error);
+        console.error(`Error ${method} data:`, error);
         throw error;
-    } finally {
-        hideLoader();
     }
 }
 
 /**
- * Initialize search functionality for a data table
- * @param {HTMLInputElement} searchInput - The search input element
- * @param {HTMLTableElement} table - The table to search
+ * Add styles for the loader overlay to the document
  */
-function initializeSearch(searchInput, table) {
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        const rows = table.querySelectorAll('tbody tr');
-        
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            if (text.includes(searchTerm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    });
-}
-
-/**
- * Initialize sorting functionality for a data table
- * @param {HTMLTableElement} table - The table to sort
- */
-function initializeTableSorting(table) {
-    const headers = table.querySelectorAll('thead th[data-sort]');
-    
-    headers.forEach(header => {
-        header.style.cursor = 'pointer';
-        header.title = 'Click to sort';
-        
-        // Add sort icon
-        const sortIcon = document.createElement('span');
-        sortIcon.classList.add('ms-1');
-        sortIcon.innerHTML = '&#8645;'; // Up-down arrow
-        header.appendChild(sortIcon);
-        
-        header.addEventListener('click', () => {
-            const sortColumn = header.dataset.sort;
-            let sortDirection = header.dataset.sortDirection || 'asc';
-            
-            // Update all headers
-            headers.forEach(h => {
-                if (h !== header) {
-                    h.dataset.sortDirection = '';
-                    h.querySelector('span').innerHTML = '&#8645;';
-                }
-            });
-            
-            // Toggle sort direction
-            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            header.dataset.sortDirection = sortDirection;
-            
-            // Update sort icon
-            sortIcon.innerHTML = sortDirection === 'asc' ? '&#9650;' : '&#9660;';
-            
-            // Sort table
-            sortTable(table, sortColumn, sortDirection);
-        });
-    });
-}
-
-/**
- * Sort a table by a specific column
- * @param {HTMLTableElement} table - The table to sort
- * @param {string} column - The column to sort by
- * @param {string} direction - The sort direction ('asc' or 'desc')
- */
-function sortTable(table, column, direction) {
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    
-    // Sort the rows
-    rows.sort((a, b) => {
-        const aValue = a.querySelector(`td[data-column="${column}"]`).textContent.trim();
-        const bValue = b.querySelector(`td[data-column="${column}"]`).textContent.trim();
-        
-        // Check if values are dates
-        const aDate = new Date(aValue);
-        const bDate = new Date(bValue);
-        
-        if (!isNaN(aDate) && !isNaN(bDate)) {
-            return direction === 'asc' ? aDate - bDate : bDate - aDate;
+document.addEventListener('DOMContentLoaded', function() {
+    // Add loader overlay styles
+    const style = document.createElement('style');
+    style.textContent = `
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
         }
-        
-        // Check if values are numbers
-        const aNum = parseFloat(aValue);
-        const bNum = parseFloat(bValue);
-        
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-            return direction === 'asc' ? aNum - bNum : bNum - aNum;
-        }
-        
-        // Default to string comparison
-        return direction === 'asc' 
-            ? aValue.localeCompare(bValue) 
-            : bValue.localeCompare(aValue);
-    });
-    
-    // Clear the table and add the sorted rows
-    tbody.innerHTML = '';
-    rows.forEach(row => {
-        tbody.appendChild(row);
-    });
-}
-
-// Set active nav item based on current page
-document.addEventListener('DOMContentLoaded', () => {
-    const currentPath = window.location.pathname;
-    const navLinks = document.querySelectorAll('.sidebar .nav-link');
-    
-    navLinks.forEach(link => {
-        const href = link.getAttribute('href');
-        if (href === currentPath || 
-            (currentPath === '/' && href === '/dashboard') ||
-            (currentPath !== '/' && href !== '/dashboard' && currentPath.includes(href))) {
-            link.classList.add('active');
-        }
-    });
+    `;
+    document.head.appendChild(style);
 });

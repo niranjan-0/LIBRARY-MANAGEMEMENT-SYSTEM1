@@ -1,225 +1,264 @@
-let membershipTypes = [];
-let currentMembershipTypeId = null;
-let currentPage = 1;
-const itemsPerPage = 10;
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize membership types table
+    // Global variables
+    let currentPage = 1;
+    const itemsPerPage = 10;
+    let allMembershipTypes = [];
+    let membershipTypeToDelete = null;
+    
+    // Initial load
     loadMembershipTypes();
+    setupButtonListeners();
     
-    // Setup listeners
-    document.getElementById('membershipTypeForm').addEventListener('submit', handleMembershipTypeFormSubmit);
-    document.getElementById('searchMembershipTypes').addEventListener('input', filterMembershipTypes);
-    document.getElementById('addNewMembershipTypeBtn').addEventListener('click', () => {
-        resetMembershipTypeForm();
-        document.getElementById('membershipTypeModalLabel').textContent = 'Add New Membership Type';
-        document.querySelector('#membershipTypeModal .btn-primary').textContent = 'Add Membership Type';
-    });
-});
-
-/**
- * Load all membership types from API
- */
-async function loadMembershipTypes() {
-    try {
-        membershipTypes = await fetchData('/api/membershiptypes');
-        displayMembershipTypes(membershipTypes, currentPage);
-    } catch (error) {
-        console.error('Error loading membership types:', error);
-    }
-}
-
-/**
- * Display membership types in the table
- */
-function displayMembershipTypes(typesToDisplay, page) {
-    const tableBody = document.getElementById('membershipTypesTableBody');
-    tableBody.innerHTML = '';
-    
-    // Calculate pagination
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedTypes = typesToDisplay.slice(startIndex, endIndex);
-    
-    if (paginatedTypes.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No membership types found</td></tr>';
-        return;
+    /**
+     * Load all membership types from API
+     */
+    async function loadMembershipTypes() {
+        showLoader();
+        try {
+            const response = await fetchData('/api/membershiptypes');
+            allMembershipTypes = response;
+            displayMembershipTypes(allMembershipTypes, 1);
+            hideLoader();
+        } catch (error) {
+            showToast('Error loading membership types: ' + error.message, 'error');
+            hideLoader();
+        }
     }
     
-    paginatedTypes.forEach(type => {
-        const row = document.createElement('tr');
+    /**
+     * Display membership types in the table
+     */
+    function displayMembershipTypes(membershipTypesToDisplay, page) {
+        const table = document.getElementById('membershipTypesTable');
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
         
-        row.innerHTML = `
-            <td data-column="typeName">${type.TypeName}</td>
-            <td data-column="durationMonths">${type.DurationMonths} months</td>
-            <td data-column="fee">$${type.Fee.toFixed(2)}</td>
-            <td>
-                <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary edit-type" data-id="${type.MembershipTypeID}">
-                        <i class="bi bi-pencil"></i> Edit
-                    </button>
-                    <button class="btn btn-sm btn-danger delete-type" data-id="${type.MembershipTypeID}">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
-                </div>
-            </td>
-        `;
+        // Calculate pagination
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, membershipTypesToDisplay.length);
+        const paginatedTypes = membershipTypesToDisplay.slice(startIndex, endIndex);
         
-        tableBody.appendChild(row);
-    });
-    
-    // Setup edit and delete buttons
-    setupMembershipTypeButtonListeners();
-    
-    // Setup pagination
-    const paginationContainer = document.getElementById('membershipTypesPagination');
-    createPagination(paginationContainer, typesToDisplay.length, itemsPerPage, page, (newPage) => {
-        currentPage = newPage;
-        displayMembershipTypes(typesToDisplay, newPage);
-    });
-    
-    // Initialize sorting
-    initializeTableSorting(document.getElementById('membershipTypesTable'));
-}
-
-/**
- * Setup event listeners for edit and delete buttons
- */
-function setupMembershipTypeButtonListeners() {
-    // Edit membership type buttons
-    document.querySelectorAll('.edit-type').forEach(button => {
-        button.addEventListener('click', () => {
-            const typeId = button.getAttribute('data-id');
-            editMembershipType(typeId);
-        });
-    });
-    
-    // Delete membership type buttons
-    document.querySelectorAll('.delete-type').forEach(button => {
-        button.addEventListener('click', () => {
-            const typeId = button.getAttribute('data-id');
-            if (confirm('Are you sure you want to delete this membership type?')) {
-                deleteMembershipType(typeId);
-            }
-        });
-    });
-}
-
-/**
- * Reset membership type form for adding a new type
- */
-function resetMembershipTypeForm() {
-    const form = document.getElementById('membershipTypeForm');
-    form.reset();
-    currentMembershipTypeId = null;
-    
-    // Set default values
-    document.getElementById('durationMonths').value = '12';
-    document.getElementById('fee').value = '100.00';
-    
-    // Clear validation errors
-    form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-}
-
-/**
- * Edit a membership type
- */
-async function editMembershipType(typeId) {
-    try {
-        const type = membershipTypes.find(t => t.MembershipTypeID == typeId);
-        if (!type) return;
-        
-        currentMembershipTypeId = typeId;
-        
-        // Fill the form
-        document.getElementById('typeName').value = type.TypeName;
-        document.getElementById('durationMonths').value = type.DurationMonths;
-        document.getElementById('fee').value = type.Fee.toFixed(2);
-        
-        // Update modal title and button text
-        document.getElementById('membershipTypeModalLabel').textContent = 'Edit Membership Type';
-        document.querySelector('#membershipTypeModal .btn-primary').textContent = 'Update Membership Type';
-        
-        // Show the modal
-        const membershipTypeModal = new bootstrap.Modal(document.getElementById('membershipTypeModal'));
-        membershipTypeModal.show();
-    } catch (error) {
-        console.error('Error editing membership type:', error);
-        showToast('Failed to load membership type details', 'error');
-    }
-}
-
-/**
- * Handle membership type form submission (add/edit)
- */
-async function handleMembershipTypeFormSubmit(e) {
-    e.preventDefault();
-    
-    const form = document.getElementById('membershipTypeForm');
-    
-    // Validate form
-    if (!validateForm(form)) {
-        return;
-    }
-    
-    // Collect form data
-    const typeData = {
-        TypeName: document.getElementById('typeName').value,
-        DurationMonths: parseInt(document.getElementById('durationMonths').value),
-        Fee: parseFloat(document.getElementById('fee').value)
-    };
-    
-    try {
-        if (currentMembershipTypeId) {
-            // Update existing membership type
-            await sendRequest(`/api/membershiptypes/${currentMembershipTypeId}`, 'PUT', typeData);
-            showToast('Membership type updated successfully', 'success');
-        } else {
-            // Add new membership type
-            await sendRequest('/api/membershiptypes', 'POST', typeData);
-            showToast('Membership type added successfully', 'success');
+        if (paginatedTypes.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No membership types found</td></tr>';
+            return;
         }
         
-        // Close modal
-        const membershipTypeModal = bootstrap.Modal.getInstance(document.getElementById('membershipTypeModal'));
-        membershipTypeModal.hide();
+        // Create table rows
+        paginatedTypes.forEach(type => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${type.MembershipTypeID}</td>
+                <td>${type.TypeName}</td>
+                <td>${type.DurationMonths}</td>
+                <td>$${type.Fee.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${type.MembershipTypeID}">
+                        <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${type.MembershipTypeID}">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
         
-        // Reload membership types
-        loadMembershipTypes();
-    } catch (error) {
-        console.error('Error saving membership type:', error);
-    }
-}
-
-/**
- * Delete a membership type
- */
-async function deleteMembershipType(typeId) {
-    try {
-        await sendRequest(`/api/membershiptypes/${typeId}`, 'DELETE');
-        showToast('Membership type deleted successfully', 'success');
+        // Create pagination
+        createPagination(
+            document.getElementById('pagination'),
+            membershipTypesToDisplay.length,
+            itemsPerPage,
+            page,
+            function(newPage) {
+                currentPage = newPage;
+                displayMembershipTypes(membershipTypesToDisplay, newPage);
+            }
+        );
         
-        // Reload membership types
-        loadMembershipTypes();
-    } catch (error) {
-        console.error('Error deleting membership type:', error);
-    }
-}
-
-/**
- * Filter membership types based on search input
- */
-function filterMembershipTypes() {
-    const searchTerm = document.getElementById('searchMembershipTypes').value.toLowerCase();
-    
-    if (!searchTerm) {
-        displayMembershipTypes(membershipTypes, 1);
-        return;
+        // Setup button listeners for edit and delete
+        setupButtonListeners();
     }
     
-    const filteredTypes = membershipTypes.filter(type => 
-        type.TypeName.toLowerCase().includes(searchTerm)
-    );
+    /**
+     * Setup event listeners for edit and delete buttons
+     */
+    function setupButtonListeners() {
+        // Modal save button
+        document.getElementById('saveMembershipType').addEventListener('click', handleMembershipTypeFormSubmit);
+        
+        // Confirm delete button
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (membershipTypeToDelete) {
+                deleteMembershipType(membershipTypeToDelete);
+            }
+        });
+        
+        // Search input
+        document.getElementById('searchInput').addEventListener('keyup', filterMembershipTypes);
+        
+        // After rendering the table, attach event listeners to edit and delete buttons
+        setTimeout(() => {
+            // Edit buttons
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const typeId = this.getAttribute('data-id');
+                    editMembershipType(typeId);
+                });
+            });
+            
+            // Delete buttons
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const typeId = this.getAttribute('data-id');
+                    membershipTypeToDelete = typeId;
+                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                    deleteModal.show();
+                });
+            });
+        }, 100);
+        
+        // Reset form when modal is opened for adding a new membership type
+        const membershipTypeModal = document.getElementById('membershipTypeModal');
+        membershipTypeModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            if (!button || !button.classList.contains('edit-btn')) {
+                resetMembershipTypeForm();
+            }
+        });
+    }
     
-    displayMembershipTypes(filteredTypes, 1);
-}
+    /**
+     * Reset membership type form for adding a new membership type
+     */
+    function resetMembershipTypeForm() {
+        document.getElementById('membershipTypeForm').reset();
+        document.getElementById('membershipTypeId').value = '';
+        document.getElementById('membershipTypeModalLabel').textContent = 'Add New Membership Type';
+    }
+    
+    /**
+     * Edit a membership type
+     */
+    async function editMembershipType(typeId) {
+        showLoader();
+        try {
+            const response = await fetchData(`/api/membershiptypes/${typeId}`);
+            
+            // Populate form
+            document.getElementById('membershipTypeId').value = response.MembershipTypeID;
+            document.getElementById('typeName').value = response.TypeName;
+            document.getElementById('durationMonths').value = response.DurationMonths;
+            document.getElementById('fee').value = response.Fee;
+            
+            // Change modal title
+            document.getElementById('membershipTypeModalLabel').textContent = 'Edit Membership Type';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('membershipTypeModal'));
+            modal.show();
+            
+            hideLoader();
+        } catch (error) {
+            showToast('Error loading membership type details: ' + error.message, 'error');
+            hideLoader();
+        }
+    }
+    
+    /**
+     * Handle membership type form submission (add/edit)
+     */
+    async function handleMembershipTypeFormSubmit(e) {
+        e.preventDefault();
+        
+        // Validate form
+        const form = document.getElementById('membershipTypeForm');
+        if (!validateForm(form)) {
+            showToast('Please fill in all required fields correctly', 'error');
+            return;
+        }
+        
+        // Get form data
+        const typeId = document.getElementById('membershipTypeId').value;
+        const typeName = document.getElementById('typeName').value;
+        const durationMonths = parseInt(document.getElementById('durationMonths').value);
+        const fee = parseFloat(document.getElementById('fee').value);
+        
+        // Create data object
+        const data = {
+            TypeName: typeName,
+            DurationMonths: durationMonths,
+            Fee: fee
+        };
+        
+        if (typeId) {
+            data.MembershipTypeID = parseInt(typeId);
+        }
+        
+        showLoader();
+        try {
+            let response;
+            if (typeId) {
+                // Update existing membership type
+                response = await sendRequest(`/api/membershiptypes/${typeId}`, 'PUT', data);
+                showToast('Membership type updated successfully');
+            } else {
+                // Add new membership type
+                response = await sendRequest('/api/membershiptypes', 'POST', data);
+                showToast('Membership type added successfully');
+            }
+            
+            // Close modal and reload data
+            const modal = bootstrap.Modal.getInstance(document.getElementById('membershipTypeModal'));
+            modal.hide();
+            loadMembershipTypes();
+            
+            hideLoader();
+        } catch (error) {
+            showToast('Error saving membership type: ' + error.message, 'error');
+            hideLoader();
+        }
+    }
+    
+    /**
+     * Delete a membership type
+     */
+    async function deleteMembershipType(typeId) {
+        showLoader();
+        try {
+            const response = await sendRequest(`/api/membershiptypes/${typeId}`, 'DELETE');
+            showToast('Membership type deleted successfully');
+            
+            // Close modal and reload data
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+            modal.hide();
+            loadMembershipTypes();
+            
+            hideLoader();
+        } catch (error) {
+            showToast('Error deleting membership type: ' + error.message, 'error');
+            hideLoader();
+        }
+    }
+    
+    /**
+     * Filter membership types based on search input
+     */
+    function filterMembershipTypes() {
+        const searchValue = document.getElementById('searchInput').value.toLowerCase();
+        
+        if (!searchValue) {
+            displayMembershipTypes(allMembershipTypes, 1);
+            return;
+        }
+        
+        const filteredTypes = allMembershipTypes.filter(type => 
+            type.TypeName.toLowerCase().includes(searchValue) ||
+            type.MembershipTypeID.toString().includes(searchValue) ||
+            type.DurationMonths.toString().includes(searchValue) ||
+            type.Fee.toString().includes(searchValue)
+        );
+        
+        currentPage = 1;
+        displayMembershipTypes(filteredTypes, 1);
+    }
+});
