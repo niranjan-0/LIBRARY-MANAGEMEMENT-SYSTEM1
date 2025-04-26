@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Borrowings</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2 bg-dark sidebar">
+                <div class="d-flex flex-column p-3 text-white">
+                    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                        <i class="bi bi-book me-2 fs-4"></i>
+                        <span class="fs-4">Library DBMS</span>
+                    </a>
+                    <hr>
+                    <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item">
+                            <a href="/dashboard" class="nav-link">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/books" class="nav-link">
+                                <i class="bi bi-book"></i>
+                                Books
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/members" class="nav-link">
+                                <i class="bi bi-people"></i>
+                                Members
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/publishers" class="nav-link">
+                                <i class="bi bi-building"></i>
+                                Publishers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/staff" class="nav-link">
+                                <i class="bi bi-person-badge"></i>
+                                Staff
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/borrowings" class="nav-link">
+                                <i class="bi bi-arrow-left-right"></i>
+                                Borrowings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/reservations" class="nav-link">
+                                <i class="bi bi-calendar-check"></i>
+                                Reservations
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/fines" class="nav-link">
+                                <i class="bi bi-cash"></i>
+                                Fines
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/membershiptypes" class="nav-link">
+                                <i class="bi bi-card-checklist"></i>
+                                Membership Types
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main content -->
+            <div class="col-lg-10 content-wrapper">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Borrowings Management</h1>
+                    <button id="addNewBorrowingBtn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#borrowingModal">
+                        <i class="bi bi-plus-circle"></i> Add New Borrowing
+                    </button>
+                </div>
+                
+                <!-- Filter and Search -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="btn-group mb-3 mb-md-0">
+                                    <button type="button" id="filter-all" class="btn btn-secondary filter-btn active" onclick="loadBorrowings()">All</button>
+                                    <button type="button" id="filter-active" class="btn btn-secondary filter-btn" onclick="filterByStatus('active')">Active</button>
+                                    <button type="button" id="filter-returned" class="btn btn-secondary filter-btn" onclick="filterByStatus('returned')">Returned</button>
+                                    <button type="button" id="filter-overdue" class="btn btn-secondary filter-btn" onclick="filterByStatus('overdue')">Overdue</button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="search-container">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="searchBorrowings" class="form-control" placeholder="Search borrowings...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Borrowings Table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="borrowingsTable">
+                                <thead>
+                                    <tr>
+                                        <th data-sort="member">Member</th>
+                                        <th data-sort="book">Book</th>
+                                        <th data-sort="borrowDate">Borrow Date</th>
+                                        <th data-sort="dueDate">Due Date</th>
+                                        <th data-sort="returnDate">Return Date</th>
+                                        <th data-sort="staff">Staff</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="borrowingsTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center">Loading borrowings...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div id="borrowingsPagination" class="mt-3">
+                            <!-- Pagination will be generated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Borrowing Modal -->
+    <div class="modal fade" id="borrowingModal" tabindex="-1" aria-labelledby="borrowingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="borrowingModalLabel">Add New Borrowing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="borrowingForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="memberID" class="form-label required-field">Member</label>
+                                <select class="form-select" id="memberID" required>
+                                    <option value="">Select Member</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select a member
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="bookID" class="form-label required-field">Book</label>
+                                <select class="form-select" id="bookID" required>
+                                    <option value="">Select Book</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select a book
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="borrowDate" class="form-label">Borrow Date</label>
+                                <input type="date" class="form-control" id="borrowDate">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="dueDate" class="form-label required-field">Due Date</label>
+                                <input type="date" class="form-control" id="dueDate" required>
+                                <div class="invalid-feedback">
+                                    Please select a due date
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="returnDate" class="form-label">Return Date</label>
+                                <input type="date" class="form-control" id="returnDate">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="staffID" class="form-label">Staff</label>
+                            <select class="form-select" id="staffID">
+                                <option value="">Select Staff Member</option>
+                            </select>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Add Borrowing</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/borrowings.js"></script>
+</body>
+</html>

@@ -1,0 +1,248 @@
+/* General Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f9;
+}
+
+.content-wrapper {
+    padding: 20px;
+}
+
+.card {
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card-header {
+    font-weight: 600;
+}
+
+/* Sidebar styles */
+.sidebar {
+    min-height: 100vh;
+}
+
+.sidebar .nav-link {
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(73, 80, 87, 0.1);
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.sidebar .nav-link i {
+    margin-right: 0.5rem;
+}
+
+/* Dashboard widgets */
+.stats-card {
+    border-left: 4px solid var(--bs-primary);
+    transition: transform 0.3s;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.stats-card .card-body {
+    padding: 1.25rem;
+}
+
+.stats-card .stat-icon {
+    font-size: 2rem;
+    opacity: 0.7;
+}
+
+.stats-card .stats-number {
+    font-size: 1.75rem;
+    font-weight: bold;
+}
+
+.stats-card .stats-text {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Data Tables */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+.data-table th, 
+.data-table td {
+    padding: 0.75rem;
+    vertical-align: top;
+}
+
+.data-table tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Forms */
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.required-field::after {
+    content: "*";
+    color: red;
+    margin-left: 2px;
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+/* Custom error styles */
+.invalid-feedback {
+    display: none;
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+/* Loader animation */
+.loader-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+    .sidebar {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .content-wrapper {
+        padding: 10px;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card .stats-number {
+        font-size: 1.5rem;
+    }
+}
+
+/* Custom table styles for better mobile view */
+@media (max-width: 767px) {
+    .responsive-table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+}
+
+/* Search bar styling */
+.search-container {
+    margin-bottom: 1rem;
+}
+
+.search-container .form-control {
+    border-radius: 20px;
+}
+
+/* Badge styling */
+.badge-primary {
+    background-color: var(--bs-primary);
+}
+
+.badge-success {
+    background-color: var(--bs-success);
+}
+
+.badge-warning {
+    background-color: var(--bs-warning);
+}
+
+.badge-danger {
+    background-color: var(--bs-danger);
+}
+
+/* Action buttons */
+.action-buttons .btn {
+    margin-right: 5px;
+}
+
+.action-buttons .btn:last-child {
+    margin-right: 0;
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-active {
+    background-color: var(--bs-success);
+}
+
+.status-pending {
+    background-color: var(--bs-warning);
+}
+
+.status-inactive {
+    background-color: var(--bs-danger);
+}

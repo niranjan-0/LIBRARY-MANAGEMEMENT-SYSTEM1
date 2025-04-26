@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Dashboard</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2 bg-dark sidebar">
+                <div class="d-flex flex-column p-3 text-white">
+                    <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                        <i class="bi bi-book me-2 fs-4"></i>
+                        <span class="fs-4">Library DBMS</span>
+                    </a>
+                    <hr>
+                    <ul class="nav nav-pills flex-column mb-auto">
+                        <li class="nav-item">
+                            <a href="/dashboard" class="nav-link">
+                                <i class="bi bi-speedometer2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/books" class="nav-link">
+                                <i class="bi bi-book"></i>
+                                Books
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/members" class="nav-link">
+                                <i class="bi bi-people"></i>
+                                Members
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/publishers" class="nav-link">
+                                <i class="bi bi-building"></i>
+                                Publishers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/staff" class="nav-link">
+                                <i class="bi bi-person-badge"></i>
+                                Staff
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/borrowings" class="nav-link">
+                                <i class="bi bi-arrow-left-right"></i>
+                                Borrowings
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/reservations" class="nav-link">
+                                <i class="bi bi-calendar-check"></i>
+                                Reservations
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/fines" class="nav-link">
+                                <i class="bi bi-cash"></i>
+                                Fines
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/membershiptypes" class="nav-link">
+                                <i class="bi bi-card-checklist"></i>
+                                Membership Types
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Main content -->
+            <div class="col-lg-10 content-wrapper">
+                <h1 class="mb-4">Dashboard</h1>
+                
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-8">
+                                        <div class="stats-number" id="total-books">0</div>
+                                        <div class="stats-text">Total Books</div>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <div class="stat-icon">
+                                            <i class="bi bi-book"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-8">
+                                        <div class="stats-number" id="total-members">0</div>
+                                        <div class="stats-text">Total Members</div>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <div class="stat-icon">
+                                            <i class="bi bi-people"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-8">
+                                        <div class="stats-number" id="total-borrowings">0</div>
+                                        <div class="stats-text">Total Borrowings</div>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <div class="stat-icon">
+                                            <i class="bi bi-arrow-left-right"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="card stats-card">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-8">
+                                        <div class="stats-number" id="overdue-borrowings">0</div>
+                                        <div class="stats-text">Overdue Books</div>
+                                    </div>
+                                    <div class="col-4 text-end">
+                                        <div class="stat-icon">
+                                            <i class="bi bi-exclamation-circle"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts and Tables Row -->
+                <div class="row mb-4">
+                    <!-- Books by Genre Chart -->
+                    <div class="col-xl-6 col-lg-12 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Books by Genre</h5>
+                            </div>
+                            <div class="card-body">
+                                <div style="height: 300px;">
+                                    <canvas id="genreChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Top Books Table -->
+                    <div class="col-xl-6 col-lg-12 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Most Borrowed Books</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="top-books-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Book Title</th>
+                                                <th>Times Borrowed</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="3" class="text-center">Loading data...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Borrowings Table -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Recent Borrowings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped" id="recent-borrowings-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Member</th>
+                                                <th>Book</th>
+                                                <th>Borrow Date</th>
+                                                <th>Due Date</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td colspan="5" class="text-center">Loading data...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
