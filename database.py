@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
-    'password': '',
+    'password': 'password',
     'database': 'LibraryDB_Expanded1'
 }
 

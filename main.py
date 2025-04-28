@@ -4,6 +4,9 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for
 from models import db, Publisher, Book, Member, MembershipType, Staff, Borrowing, Fine, Reservation
 from datetime import datetime
 from sqlalchemy import func, text
+import dotenv
+# Load environment variables
+dotenv.load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
